@@ -50,7 +50,7 @@ function processFrame() {
   
   // Add this line to download the image for debugging
   downloadImage(frame, 'captured-frame.jpeg');
-
+  
   analyzeEmotion(frame).then(emotionData => {
     displayEmotionData(emotionData);
     isProcessingDone = true;
@@ -68,7 +68,7 @@ function downloadImage(dataUrl, filename) {
 }
 
 async function analyzeEmotion(base64Image) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = "";
   const headers = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${apiKey}`
