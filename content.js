@@ -2,6 +2,14 @@ let videoElement = null;
 let canvasElement = null;
 let stream = null;
 let isProcessingDone = false; // Flag to track if processing is done
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === "startCamera") {
+        initCamera();
+    }
+});
+
+
 async function initCamera() {
   if (window.location.href.includes("thecrimson.com")) {
     try {
@@ -144,5 +152,6 @@ function displayEmotionData(emotionData) {
     emotionBox.textContent = "Could not extract emotion data.";
   }
 }
+
 
 initCamera();

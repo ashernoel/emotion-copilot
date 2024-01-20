@@ -3,7 +3,8 @@
   "name": "Emotional Copilot",
   "version": "1.0",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "action": {
     "default_popup": "popup.html"
