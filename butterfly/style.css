@@ -1,0 +1,5 @@
+img.butterfly {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+}
