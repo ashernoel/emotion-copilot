@@ -1,32 +1,26 @@
 import {FilesetResolver, GestureRecognizer, FaceLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js';
 
-// const src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js';
-//   const script = document.createElement('script');
-//   script.crossOrigin = 'anonymous';
-//   script.src = src;
-//   document.body.appendChild(script);
+const filesetResolver = await FilesetResolver.forVisionTasks(
+  // path/to/wasm/root
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+);
+const gestureRecognizer = await GestureRecognizer.createFromOptions(filesetResolver, {
+  baseOptions: {
+    modelAssetPath: "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task"
+  },
+  runningMode: 'VIDEO',
+  numHands: 2
+});
 
-  const filesetResolver = await FilesetResolver.forVisionTasks(
-    // path/to/wasm/root
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-  );
-  const gestureRecognizer = await GestureRecognizer.createFromOptions(filesetResolver, {
-    baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task"
-    },
-    runningMode: 'VIDEO',
-    numHands: 2
-  });
-
-      const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-          delegate: "GPU"
-        },
-        outputFaceBlendshapes: true,
-        runningMode: 'VIDEO',
-        numFaces: 1
-      });
+const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+  baseOptions: {
+    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+    delegate: "GPU"
+  },
+  outputFaceBlendshapes: true,
+  runningMode: 'VIDEO',
+  numFaces: 1
+});
 
   const video = document.createElement('video');
 // const video = document.getElementById("webcam");
@@ -246,6 +240,7 @@ function initiateWikiRedirect() {
     padding: 20px;
     border-radius: 20px;
     background-color: rgba(0, 0, 0, 0.8);
+    color: white;
   `;
   document.body.appendChild(dialog);
   dialog.showModal();
@@ -299,7 +294,7 @@ async function predictWebcam() {
           console.log("Squinting!");
         }
 
-        if (squintCount > 50) {
+        if (squintCount > 100) {
           const url = location.href;
           if (location.hostname === 'en.wikipedia.org') {
             zoomer.stopZoomIn();
