@@ -218,27 +218,42 @@ function initiateWikiRedirect() {
   video.srcObject.getVideoTracks()[0].stop();
   document.body.style.transform = 'unset';
 
-  const div = document.createElement('div');
-  div.innerHTML = `
+  const dialog = document.createElement('dialog');
+  dialog.innerHTML = `
     <span>Seems like you need a little help...</span>
     <br />
     <span>Redirecting to Simple Wikipedia in 2... 1...</span>
   `;
-  div.style.cssText = `
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+  const button = document.createElement('button');
+  button.textContent = 'I am sorry';
+  button.addEventListener('click', () => {
+    location.href = `https://simple.wikipedia.org/${location.pathname}`;
+  });
+  dialog.appendChild(button);
+  button.style.cssText = `
+  margin: 0;
+    border: 0;
+    padding: 10px;
+    font-size: 24px;
+    border-radius: 10px;
+    margin-top: 10px;
+    margin-left: 50%;
+    transform: translate(-50%, 0);
+    cursor: pointer;
+    `;
+  dialog.style.cssText = `
     font-size: 40px;
-    padding: 50px;
+    padding: 20px;
     border-radius: 20px;
     background-color: rgba(0, 0, 0, 0.8);
   `;
+  document.body.appendChild(dialog);
+  dialog.showModal();
 
-  document.body.appendChild(div);
-  setTimeout(() => {
-    location.href = `https://simple.wikipedia.org/${location.pathname}`;
-  }, 2500);
+  // document.body.appendChild(div);
+  // setTimeout(() => {
+  //   location.href = `https://simple.wikipedia.org/${location.pathname}`;
+  // }, 2500);
 }
 
 async function predictWebcam() {
