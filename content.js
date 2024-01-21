@@ -9,7 +9,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 
-
 async function initCamera() {
   if (window.location.href.includes("thecrimson.com")) {
     try {
@@ -50,7 +49,7 @@ function processFrame() {
   
   // Add this line to download the image for debugging
   downloadImage(frame, 'captured-frame.jpeg');
-
+  
   analyzeEmotion(frame).then(emotionData => {
     displayEmotionData(emotionData);
     isProcessingDone = true;
@@ -68,14 +67,14 @@ function downloadImage(dataUrl, filename) {
 }
 
 async function analyzeEmotion(base64Image) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = "";
   const headers = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${apiKey}`
   };
 
-  // Remove the 'data:image/jpeg;base64,' part from the base64 string
   const base64Data = base64Image.replace(/^data:image\/jpeg;base64,/, '');
+  const prompt = `Carefully examine the person sitting in front of the computer screen. Pay close attention to their body language and facial expressions, with a particular focus on the eyes and forehead. Look for any signs of squinting or other subtle indicators in their expression and posture that might suggest confusion. Based on these observations, determine whether the person is confused by what they are seeing on the screen. Conclude your analysis with a JSON response containing a single key, 'confused', indicating whether the person is confused (True) or not (False)`;
 
   const payload = {
     "model": "gpt-4-vision-preview",
@@ -85,7 +84,7 @@ async function analyzeEmotion(base64Image) {
         "content": [
           {
             "type": "text",
-            "text": "What is in this image?"
+            "text": prompt
           },
           {
             "type": "image_url",
@@ -107,12 +106,29 @@ async function analyzeEmotion(base64Image) {
       body: JSON.stringify(payload)
     });
     const data = await response.json();
+    const confusedBool = checkIfConfused(data);
     console.log("Received response from GPT-4 Vision API:", data);
     return parseEmotionResponse(data);
   } catch (error) {
     console.error('Error calling GPT-4 Vision API:', error);
     return null;
   }
+}
+
+function checkIfConfused(apiResponse) {
+  if (apiResponse && apiResponse.choices && apiResponse.choices[0] && apiResponse.choices[0].message) {
+    let messageContent = apiResponse.choices[0].message.content;
+    messageContent = messageContent.replace(/True/g, 'true').replace(/False/g, 'false');
+    try {
+      const jsonResponse = JSON.parse(messageContent.match(/\{.*\}/s)[0]);
+      if (typeof jsonResponse.confused === 'boolean') {
+        return jsonResponse.confused;
+      }
+    } catch (error) {
+      console.error("Error parsing JSON from message content:", error);
+    }
+  }
+  return false;
 }
 
 function parseEmotionResponse(apiResponse) {
@@ -124,7 +140,6 @@ function parseEmotionResponse(apiResponse) {
     return { content: "No emotion data found." };
   }
 }
-
 
 function displayEmotionData(emotionData) {
     // Create a container for emotion data if it doesn't exist
@@ -151,6 +166,20 @@ function displayEmotionData(emotionData) {
   } else {
     emotionBox.textContent = "Could not extract emotion data.";
   }
+}
+
+function extractWebPageContent() {
+  const title = document.title;
+  const description = document.querySelector('meta[name="description"]').getAttribute('content');
+  const keywords = document.querySelector('meta[name="keywords"]').getAttribute('content');
+  const url = window.location.href;
+
+  return {
+    title,
+    description,
+    keywords,
+    url
+  };
 }
 
 
