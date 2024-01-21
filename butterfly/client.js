@@ -1,32 +1,26 @@
 import {FilesetResolver, GestureRecognizer, FaceLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js';
 
-// const src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js';
-//   const script = document.createElement('script');
-//   script.crossOrigin = 'anonymous';
-//   script.src = src;
-//   document.body.appendChild(script);
+const filesetResolver = await FilesetResolver.forVisionTasks(
+  // path/to/wasm/root
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+);
+const gestureRecognizer = await GestureRecognizer.createFromOptions(filesetResolver, {
+  baseOptions: {
+    modelAssetPath: "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task"
+  },
+  runningMode: 'VIDEO',
+  numHands: 2
+});
 
-  const filesetResolver = await FilesetResolver.forVisionTasks(
-    // path/to/wasm/root
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-  );
-  const gestureRecognizer = await GestureRecognizer.createFromOptions(filesetResolver, {
-    baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-tasks/gesture_recognizer/gesture_recognizer.task"
-    },
-    runningMode: 'VIDEO',
-    numHands: 2
-  });
-
-      const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-          delegate: "GPU"
-        },
-        outputFaceBlendshapes: true,
-        runningMode: 'VIDEO',
-        numFaces: 1
-      });
+const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+  baseOptions: {
+    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+    delegate: "GPU"
+  },
+  outputFaceBlendshapes: true,
+  runningMode: 'VIDEO',
+  numFaces: 1
+});
 
   const video = document.createElement('video');
 // const video = document.getElementById("webcam");
@@ -180,10 +174,10 @@ const view = (() => {
     },
     scaleAt(at, amount) { // at in screen coords
       if (scale === 1 && amount < 1) return;
-      if (scale === 3 && amount > 1) return;
+      if (scale === 2 && amount > 1) return;
       if (dirty) { this.update() }
       scale *= amount;
-      scale = Math.min(scale, 3);
+      scale = Math.min(scale, 2);
       scale = Math.max(scale, 1);
       pos.x = at.x - (at.x - pos.x) * amount;
       pos.y = at.y - (at.y - pos.y) * amount;
@@ -209,6 +203,53 @@ let runningMode = "IMAGE";
 let squintCount = 0;
 let browCount = 0;
 let counter = 0;
+
+let redirectStarted = false;
+
+function initiateWikiRedirect() {
+  if (redirectStarted) return;
+  redirectStarted = true;
+  video.srcObject.getVideoTracks()[0].stop();
+  document.body.style.transform = 'unset';
+
+  const dialog = document.createElement('dialog');
+  dialog.innerHTML = `
+    <span>Seems like you need a little help...</span>
+    <br />
+    <span>Redirecting to Simple Wikipedia in 2... 1...</span>
+  `;
+  const button = document.createElement('button');
+  button.textContent = 'I am sorry';
+  button.addEventListener('click', () => {
+    location.href = `https://simple.wikipedia.org/${location.pathname}`;
+  });
+  dialog.appendChild(button);
+  button.style.cssText = `
+  margin: 0;
+    border: 0;
+    padding: 10px;
+    font-size: 24px;
+    border-radius: 10px;
+    margin-top: 10px;
+    margin-left: 50%;
+    transform: translate(-50%, 0);
+    cursor: pointer;
+    `;
+  dialog.style.cssText = `
+    font-size: 40px;
+    padding: 20px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+  `;
+  document.body.appendChild(dialog);
+  dialog.showModal();
+
+  // document.body.appendChild(div);
+  // setTimeout(() => {
+  //   location.href = `https://simple.wikipedia.org/${location.pathname}`;
+  // }, 2500);
+}
 
 async function predictWebcam() {
   // console.log(123);
@@ -247,10 +288,19 @@ async function predictWebcam() {
 
       if (squintLeft.score > 0.5 && squintRight.score > 0.5) {
         squintCount++;
-        if (squintCount > 5) {
+        if (squintCount > 2) {
           zoomer.startZoomIn();
           // zoomIn();
           console.log("Squinting!");
+        }
+
+        if (squintCount > 100) {
+          const url = location.href;
+          if (location.hostname === 'en.wikipedia.org') {
+            zoomer.stopZoomIn();
+            initiateWikiRedirect();
+            return;
+          }
         }
         // callTrigger();
       } else {
@@ -259,7 +309,7 @@ async function predictWebcam() {
       }
       if (browLeft.score > 0.5 || browRight.score > 0.5) {
         browCount++;
-        if (browCount > 5) {
+        if (browCount > 2) {
           zoomer.startZoomOut();
           // zoomOut();
           console.log("Brow up!");
