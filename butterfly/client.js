@@ -180,10 +180,10 @@ const view = (() => {
     },
     scaleAt(at, amount) { // at in screen coords
       if (scale === 1 && amount < 1) return;
-      if (scale === 3 && amount > 1) return;
+      if (scale === 2 && amount > 1) return;
       if (dirty) { this.update() }
       scale *= amount;
-      scale = Math.min(scale, 3);
+      scale = Math.min(scale, 2);
       scale = Math.max(scale, 1);
       pos.x = at.x - (at.x - pos.x) * amount;
       pos.y = at.y - (at.y - pos.y) * amount;
@@ -209,6 +209,37 @@ let runningMode = "IMAGE";
 let squintCount = 0;
 let browCount = 0;
 let counter = 0;
+
+let redirectStarted = false;
+
+function initiateWikiRedirect() {
+  if (redirectStarted) return;
+  redirectStarted = true;
+  video.srcObject.getVideoTracks()[0].stop();
+  document.body.style.transform = 'unset';
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <span>Seems like you need a little help...</span>
+    <br />
+    <span>Redirecting to Simple Wikipedia in 2... 1...</span>
+  `;
+  div.style.cssText = `
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    padding: 50px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+  `;
+
+  document.body.appendChild(div);
+  setTimeout(() => {
+    location.href = `https://simple.wikipedia.org/${location.pathname}`;
+  }, 2500);
+}
 
 async function predictWebcam() {
   // console.log(123);
@@ -247,10 +278,19 @@ async function predictWebcam() {
 
       if (squintLeft.score > 0.5 && squintRight.score > 0.5) {
         squintCount++;
-        if (squintCount > 5) {
+        if (squintCount > 2) {
           zoomer.startZoomIn();
           // zoomIn();
           console.log("Squinting!");
+        }
+
+        if (squintCount > 50) {
+          const url = location.href;
+          if (location.hostname === 'en.wikipedia.org') {
+            zoomer.stopZoomIn();
+            initiateWikiRedirect();
+            return;
+          }
         }
         // callTrigger();
       } else {
@@ -259,7 +299,7 @@ async function predictWebcam() {
       }
       if (browLeft.score > 0.5 || browRight.score > 0.5) {
         browCount++;
-        if (browCount > 5) {
+        if (browCount > 2) {
           zoomer.startZoomOut();
           // zoomOut();
           console.log("Brow up!");
